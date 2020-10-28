@@ -753,9 +753,9 @@ namespace Xwt
 		/// <returns>The Xwt frontend.</returns>
 		/// <param name="ob">The toolkit backend.</param>
 		/// <typeparam name="T">The frontend Type.</typeparam>
-		public T CreateFrontend<T> (object ob)
+		T CreateFrontend__<T> (object ob)
 		{
-			throw new NotImplementedException ();
+			throw new NotImplementedException ($"see {nameof(CreateFrontend)}");
 		}
 
 		/// <summary>
