@@ -64,7 +64,7 @@
     <Compile Include="..\Xwt.Gtk\AssemblyInfo.Gtk3.cs">
       <Link>AssemblyInfo.Gtk3.cs</Link>
     </Compile>
-    <Compile Include="..\Xwt.Gtk\Xwt.GtkBackend\AccessibleBackend.cs">
+     <Compile Include="..\Xwt.Gtk\Xwt.GtkBackend\AccessibleBackend.cs">
       <Link>Xwt.GtkBackend\AccessibleBackend.cs</Link>
     </Compile>
     <Compile Include="..\Xwt.Gtk\Xwt.GtkBackend\TextLayoutBackendHandler.cs">
