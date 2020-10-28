@@ -296,6 +296,7 @@ namespace Xwt.GtkBackend
 				if (bk == null)
 					return;
 			}
+			DisableAllEvents ();
 			bk.destroyed = true;
 			foreach (var c in w.Surface.Children)
 				MarkDestroyed (c);

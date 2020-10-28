@@ -129,7 +129,8 @@ namespace Xwt.GtkBackend
 					ApplyToAll = check.Active;
 				};
 			}
-			
+
+			LmkGtkAlertDialog(actx, message);
 			//don't show this yet, let the consumer decide when
 			this.Child.ShowAll ();
 		}

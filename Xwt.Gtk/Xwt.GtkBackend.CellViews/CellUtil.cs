@@ -95,15 +95,10 @@ namespace Xwt.GtkBackend
 				return CreateCellRenderer (actx, views.First ());
 		}
 		
-		public static Gtk.Widget CreateCellRenderer (ApplicationContext actx, CellView view)
+		static Gtk.Widget CreateCellRenderer__ (ApplicationContext actx, CellView view)
 		{
-			if (view is TextCellView) {
-				Gtk.Label lab = new Gtk.Label ();
-				lab.Xalign = 0;
-//				lab.Text = ((TextCellView)view).TextField;
-				return lab;
-			}
-			throw new NotImplementedException ();
+			
+			throw new NotImplementedException ($"see: {nameof(CreateCellRenderer)}");
 		}
 
 		public static void SetModelValue (TreeModel store, Gtk.TreeIter it, int column, Type type, object value)

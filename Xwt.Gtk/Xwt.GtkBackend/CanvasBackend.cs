@@ -73,7 +73,7 @@ namespace Xwt.GtkBackend
 			}
 		}
 
-		public void AddChild (IWidgetBackend widget, Rectangle bounds)
+		void AddChild_ (IWidgetBackend widget, Rectangle bounds)
 		{
 			var w = ((IGtkWidgetBackend)widget).Widget;
 			Widget.Add (w);
@@ -156,7 +156,7 @@ namespace Xwt.GtkBackend
 			lastAllocation = allocation;
 			var dx = VisibleWindow ? 0 : allocation.X;
 			var dy = VisibleWindow ? 0 : allocation.Y;
-			foreach (var cr in children.ToArray()) {
+			foreach (var cr in children.ToArray ()) {
 				var r = cr.Value;
 				var x = dx + (int) r.X;
 				var y = dy + (int) r.Y;
