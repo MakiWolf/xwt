@@ -97,6 +97,8 @@ namespace Xwt.GtkBackend
 	{
 		public CanvasBackend Backend;
 		public ICanvasEventSink EventSink;
+		public bool IsReallocating;
+
 		Dictionary<Gtk.Widget, Rectangle> children = new Dictionary<Gtk.Widget, Rectangle> ();
 		
 		public CustomCanvas ()
@@ -123,12 +125,19 @@ namespace Xwt.GtkBackend
 		{
 			children.Remove (widget);
 			widget.Unparent ();
+			QueueResize ();
 		}
 		
 		protected override void OnUnrealized ()
 		{
+			IsReallocating = false;
 			base.OnUnrealized ();
 			lastAllocation = new Gdk.Rectangle ();
+		}
+		
+		protected void OnReallocate ()
+		{
+			((IWidgetSurface)Backend.Frontend).Reallocate ();
 		}
 		
 		Gdk.Rectangle lastAllocation;
@@ -136,16 +145,26 @@ namespace Xwt.GtkBackend
 		protected override void OnSizeAllocated (Gdk.Rectangle allocation)
 		{
 			base.OnSizeAllocated (allocation);
-			if (!lastAllocation.Equals (allocation))
-				((IWidgetSurface)Backend.Frontend).Reallocate ();
+			try {
+				IsReallocating = true;
+				if (!lastAllocation.Equals (allocation))
+					OnReallocate ();
+			} finally {
+				IsReallocating = false;
+			}
+
 			lastAllocation = allocation;
 			var dx = VisibleWindow ? 0 : allocation.X;
 			var dy = VisibleWindow ? 0 : allocation.Y;
 			foreach (var cr in children.ToArray()) {
 				var r = cr.Value;
+				var x = dx + (int) r.X;
+				var y = dy + (int) r.Y;
 				var w = (int) Math.Max (r.Width, 0);
 				var h = (int) Math.Max (r.Height, 0);
-				cr.Key.SizeAllocate (new Gdk.Rectangle (dx + (int)r.X, dy + (int)r.Y, w, h));
+				var childAllocation = new Gdk.Rectangle (x, y, w, h);
+				// NO! if (cr.Key.Allocation != childAllocation)
+					cr.Key.SizeAllocate (childAllocation);
 			}
 		}
 		
