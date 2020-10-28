@@ -33,7 +33,7 @@ using Xwt.CairoBackend;
 
 namespace Xwt.GtkBackend
 {
-	public class CanvasBackend: WidgetBackend, ICanvasBackend
+	public partial class CanvasBackend: WidgetBackend, ICanvasBackend
 	{
 		public CanvasBackend ()
 		{

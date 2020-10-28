@@ -35,7 +35,7 @@ using TreeModel = Gtk.ITreeModel;
 
 namespace Xwt.GtkBackend
 {
-	public static class CellUtil
+	public static partial class CellUtil
 	{
 		class CellDataSource: ICellDataSource
 		{

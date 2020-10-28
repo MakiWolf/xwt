@@ -34,11 +34,10 @@ using Gdk;
 using TreeModel = Gtk.ITreeModel;
 #endif
 
-namespace Xwt.GtkBackend
-{
-	public class TableViewBackend: WidgetBackend, ICellRendererTarget
-	{
-		Dictionary<CellView,CellInfo> cellViews = new Dictionary<CellView, CellInfo> ();
+namespace Xwt.GtkBackend {
+    public partial class TableViewBackend : WidgetBackend, ICellRendererTarget 
+    {
+        Dictionary<CellView, CellInfo> cellViews = new Dictionary<CellView, CellInfo>();
 
 		class CellInfo {
 			public CellViewBackend Renderer;

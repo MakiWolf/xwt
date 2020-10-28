@@ -33,7 +33,7 @@ using System.Threading;
 
 namespace Xwt
 {
-	public sealed class Toolkit: IFrontend
+	public sealed partial class Toolkit: IFrontend
 	{
 		static Toolkit currentEngine;
 		static Toolkit nativeEngine;
@@ -129,7 +129,7 @@ namespace Xwt
 		/// Gets the toolkit backend.
 		/// </summary>
 		/// <value>The toolkit backend.</value>
-		internal ToolkitEngineBackend Backend {
+		public ToolkitEngineBackend Backend {
 			get { return backend; }
 		}
 
@@ -334,7 +334,7 @@ namespace Xwt
 		/// <summary>
 		/// Set the toolkit as the active toolkit used by Xwt.
 		/// </summary>
-		internal void SetActive ()
+		public void SetActive ()
 		{
 			currentEngine = this;
 		}
@@ -814,18 +814,18 @@ namespace Xwt
 			return img;
 		}
 
-		internal ContextBackendHandler ContextBackendHandler;
-		internal GradientBackendHandler GradientBackendHandler;
-		internal TextLayoutBackendHandler TextLayoutBackendHandler;
-		internal FontBackendHandler FontBackendHandler;
-		internal ClipboardBackend ClipboardBackend;
-		internal ImageBuilderBackendHandler ImageBuilderBackendHandler;
-		internal ImagePatternBackendHandler ImagePatternBackendHandler;
-		internal ImageBackendHandler ImageBackendHandler;
-		internal DrawingPathBackendHandler DrawingPathBackendHandler;
-		internal DesktopBackend DesktopBackend;
-		internal VectorImageRecorderContextHandler VectorImageRecorderContextHandler;
-		internal KeyboardHandler KeyboardHandler;
+		public ContextBackendHandler ContextBackendHandler;
+		public GradientBackendHandler GradientBackendHandler;
+		public TextLayoutBackendHandler TextLayoutBackendHandler;
+		public FontBackendHandler FontBackendHandler;
+		public ClipboardBackend ClipboardBackend;
+		public ImageBuilderBackendHandler ImageBuilderBackendHandler;
+		public ImagePatternBackendHandler ImagePatternBackendHandler;
+		public ImageBackendHandler ImageBackendHandler;
+		public DrawingPathBackendHandler DrawingPathBackendHandler;
+		public DesktopBackend DesktopBackend;
+		public VectorImageRecorderContextHandler VectorImageRecorderContextHandler;
+		public KeyboardHandler KeyboardHandler;
 	}
 
 	class NativeWindowFrame: WindowFrame

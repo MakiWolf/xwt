@@ -33,7 +33,7 @@ using TreeModel = Gtk.ITreeModel;
 
 namespace Xwt.GtkBackend
 {
-	public class ListStoreBackend: TableStoreBackend, IListStoreBackend
+	public partial class ListStoreBackend: TableStoreBackend, IListStoreBackend
 	{
 		public override TreeModel InitializeModel (Type[] columnTypes)
 		{

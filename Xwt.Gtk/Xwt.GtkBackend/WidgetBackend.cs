@@ -1251,7 +1251,7 @@ namespace Xwt.GtkBackend
 		}
 	}
 	
-	public interface IGtkWidgetBackend
+	public partial interface IGtkWidgetBackend
 	{
 		Gtk.Widget Widget { get; }
 	}

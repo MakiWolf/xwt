@@ -43,7 +43,8 @@ using GtkTreeModel = Gtk.TreeModel;
 
 namespace Xwt.GtkBackend
 {
-	public static class GtkWorkarounds
+
+	public static partial class GtkWorkarounds
 	{
 		const string LIBOBJC ="/usr/lib/libobjc.dylib";
 		

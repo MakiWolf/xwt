@@ -37,7 +37,7 @@ namespace Xwt.GtkBackend
 	/// <summary>
 	/// A Gnome HIG compliant alert dialog.
 	/// </summary>
-	internal class GtkAlertDialog : Gtk.MessageDialog
+	internal partial class GtkAlertDialog : Gtk.MessageDialog
 	{
 		ApplicationContext actx;
 		Command resultButton = null;
