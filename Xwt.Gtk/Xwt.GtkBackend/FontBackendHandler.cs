@@ -58,17 +58,17 @@ namespace Xwt.GtkBackend
 
 		public override IEnumerable<string> GetInstalledFonts ()
 		{
-			var fontNames = systemContext.FontMap.Families.Select (f => f.Name);
+			var fontNames = systemContext.FontMap?.Families.Select (f => f.Name);
 			if (Platform.IsMac) {
 				var macFonts = new string [] { "-apple-system-font", ".AppleSystemUIFont" }.AsEnumerable ();
-				return macFonts.Concat (fontNames);
+				return fontNames == null ? macFonts : macFonts.Concat (fontNames);
 			}
-			return fontNames;
+			return fontNames ?? Enumerable.Empty<string>();
 		}
 
 		public override IEnumerable<KeyValuePair<string, object>> GetAvailableFamilyFaces (string family)
 		{
-			FontFamily pangoFamily = systemContext.FontMap.Families.FirstOrDefault (f => f.Name == family);
+			FontFamily pangoFamily = systemContext.FontMap?.Families.FirstOrDefault (f => f.Name == family);
 			if (pangoFamily != null) {
 				foreach (var face in pangoFamily.Faces)
 					yield return new KeyValuePair<string, object>(face.FaceName, face.Describe ());
