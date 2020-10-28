@@ -189,35 +189,38 @@ namespace Xwt.GtkBackend {
 		{
 			Gtk.TreeViewColumn tc = (Gtk.TreeViewColumn) handle;
 
-			switch (change) {
-				case ListViewColumnChange.Cells:
-					tc.Clear ();
-					MapColumn (col, tc);
-					break;
-				case ListViewColumnChange.Title:
-					MapTitle (col, tc);
-					break;
-				case ListViewColumnChange.CanResize:
-					tc.Resizable = col.CanResize;
-					break;
-				case ListViewColumnChange.SortIndicatorVisible:
-					tc.SortIndicator = col.SortIndicatorVisible;
-					break;
-				case ListViewColumnChange.SortDirection:
-					tc.SortOrder = (SortType)col.SortDirection;
-					break;
-				case ListViewColumnChange.SortDataField:
-					if (col.SortDataField != null)
-						tc.SortColumnId = col.SortDataField.Index;
-					break;
-				case ListViewColumnChange.Alignment:
-					tc.Alignment = col.Alignment.ToGtkAlignment ();
-					break;
-				case ListViewColumnChange.Expanding:
-					tc.Expand = col.Expands;
-					break;
-			}
-		}
+            switch (change) {
+                case ListViewColumnChange.Cells:
+                    tc.Clear();
+                    MapColumn(col, tc);
+                    break;
+                case ListViewColumnChange.Title:
+                    MapTitle(col, tc);
+                    break;
+                case ListViewColumnChange.CanResize:
+                    tc.Resizable = col.CanResize;
+                    break;
+                case ListViewColumnChange.SortIndicatorVisible:
+                    tc.SortIndicator = col.SortIndicatorVisible;
+                    break;
+                case ListViewColumnChange.SortDirection:
+                    tc.SortOrder = (SortType) col.SortDirection;
+                    break;
+                case ListViewColumnChange.SortDataField:
+                    if (col.SortDataField != null)
+                        tc.SortColumnId = col.SortDataField.Index;
+                    break;
+                case ListViewColumnChange.Alignment:
+                    tc.Alignment = col.Alignment.ToGtkAlignment();
+                    break;
+                case ListViewColumnChange.Expanding:
+                    tc.Expand = col.Expands;
+                    break;
+                case ListViewColumnChange.Width:
+                    tc.MinWidth = col.Width;
+                    break;
+            }
+        }
 
 		public void ScrollToRow (TreeIter pos)
 		{
