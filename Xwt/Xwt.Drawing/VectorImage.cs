@@ -614,7 +614,7 @@ namespace Xwt.Drawing
 
 		#endregion
 
-		internal void Draw (DrawingPathBackendHandler targetHandler, object ctx, VectorImageData cm)
+		public void Draw (DrawingPathBackendHandler targetHandler, object ctx, VectorImageData cm)
 		{
 			int di = 0;
 			int ci = 0;

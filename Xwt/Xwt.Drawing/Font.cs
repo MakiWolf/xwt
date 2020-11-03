@@ -41,7 +41,7 @@ namespace Xwt.Drawing
 	{
 		FontBackendHandler handler;
 
-		internal Font (object backend): this (backend, null)
+		public Font (object backend): this (backend, null)
 		{
 		}
 		
