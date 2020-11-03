@@ -104,6 +104,8 @@ namespace Xwt.Backends
 			if (data.TryGetValue (type, out val)) {
 				if (val != null)
 					return val;
+				if (DataRequestCallback != null)
+					return DataRequestCallback(type);
 			}
 			return null;
 		}
