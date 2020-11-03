@@ -200,5 +200,20 @@ namespace Xwt.GtkBackend
 				tl.Layout.Wrap = Pango.WrapMode.WordChar;
 			wrapMode = value;
 		}
+
+		public override object Create ()
+		{
+			var layout =  new PangoBackend {
+				Layout = Pango.CairoHelper.CreateLayout (SharedContext)
+			};
+			SetTrimming (layout, TextTrimming.Word);
+			SetWrapMode (layout, WrapMode.Word);
+			return layout;
+
+		}
+
+		public override object Create (Context context) {
+			return Create();
+		}
 	}
 }
