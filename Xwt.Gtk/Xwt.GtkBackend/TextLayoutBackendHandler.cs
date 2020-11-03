@@ -126,12 +126,12 @@ namespace Xwt.GtkBackend
 			((IDisposable)SharedContext).Dispose ();
 		}
 		
-		public override object Create ()
-		{
-			return new PangoBackend {
-				Layout = Pango.CairoHelper.CreateLayout (SharedContext)
-			};
-		}
+		// public override object Create ()
+		// {
+		// 	return new PangoBackend {
+		// 		Layout = Pango.CairoHelper.CreateLayout (SharedContext)
+		// 	};
+		// }
 
 		public override void SetText (object backend, string text)
 		{
