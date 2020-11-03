@@ -82,7 +82,7 @@ namespace Xwt
 		EventHandler boundsChanged;
 		EventHandler<MouseScrolledEventArgs> mouseScrolled;
 		
-		EventHandler gotFocus;
+		protected EventHandler gotFocus;
 		EventHandler lostFocus;
 		
 		/// <summary>

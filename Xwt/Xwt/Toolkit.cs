@@ -121,7 +121,7 @@ namespace Xwt
 		/// Gets the application context.
 		/// </summary>
 		/// <value>The application context.</value>
-		internal ApplicationContext Context {
+		public ApplicationContext Context {
 			get { return context; }
 		}
 
