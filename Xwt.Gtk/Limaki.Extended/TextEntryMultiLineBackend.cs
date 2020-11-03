@@ -25,6 +25,7 @@
 // THE SOFTWARE.
 
 using System;
+using Gtk;
 using Xwt.Backends;
 using Xwt.Drawing;
 using Context = Cairo.Context;
@@ -114,10 +115,14 @@ namespace Xwt.GtkBackend {
             set {
                 showFrame = value;
                 frameMargin = value ? 4 : 0;
-                TextView.PixelsAboveLines = frameMargin;
-                TextView.PixelsBelowLines = frameMargin;
-                TextView.RightMargin = frameMargin;
-                TextView.LeftMargin = value ? frameMargin : 1;
+                // TextView.PixelsAboveLines = frameMargin;
+                // TextView.PixelsBelowLines = frameMargin;
+                TextView.SetBorderWindowSize (TextWindowType.Top,frameMargin);
+                TextView.SetBorderWindowSize (TextWindowType.Bottom,frameMargin);
+                TextView.SetBorderWindowSize (TextWindowType.Left,frameMargin);
+                TextView.SetBorderWindowSize (TextWindowType.Right,frameMargin);
+                // TextView.RightMargin = frameMargin;
+                // TextView.LeftMargin = value ? frameMargin : 1;
 
             }
         }
@@ -187,13 +192,16 @@ namespace Xwt.GtkBackend {
 		}
 #else
 	    private void RenderFrame (object sender, Context ctx) {
-		    var w = TextView.GetWindow (Gtk.TextWindowType.Text);
+		   
 		    if (ShowFrame) {
+			    var w = TextView.GetWindow (Gtk.TextWindowType.Text);
 			    w.GetSize (out var ww, out var wh);
-			    ctx.Save ();
-				ctx.Rectangle (0,0,ww,wh);
-				ctx.Stroke ();
-				ctx.Restore ();
+			    TextView.StyleContext.RenderFrame (ctx,0,0,ww,wh);
+			   
+			 //    ctx.Save ();
+				// ctx.Rectangle (0,0,ww,wh);
+				// ctx.Stroke ();
+				// ctx.Restore ();
 		    }
 	    }
 
