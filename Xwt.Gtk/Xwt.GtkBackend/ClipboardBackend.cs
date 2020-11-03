@@ -35,7 +35,7 @@ namespace Xwt.GtkBackend
 	public partial class GtkClipboardBackend: ClipboardBackend
 	{
 //		Gtk.Clipboard primaryClipboard;
-		Gtk.Clipboard clipboard;
+		protected Gtk.Clipboard clipboard;
 		
 		public GtkClipboardBackend ()
 		{
