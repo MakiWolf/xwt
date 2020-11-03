@@ -375,7 +375,7 @@ namespace Xwt
 		/// Gets the backend.
 		/// </summary>
 		/// <value>The backend.</value>
-		IWidgetBackend Backend {
+		public IWidgetBackend Backend {
 			get { return (IWidgetBackend) BackendHost.Backend; }
 		}
 		

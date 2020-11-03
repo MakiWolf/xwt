@@ -70,7 +70,7 @@ namespace Xwt
 			}
 		}
 		
-		IDatePickerBackend Backend {
+		new IDatePickerBackend Backend {
 			get { return (IDatePickerBackend) BackendHost.Backend; }
 		}
 		

@@ -62,7 +62,7 @@ namespace Xwt
 			return new WidgetBackendHost ();
 		}
 
-		IFolderSelectorBackend Backend {
+		new IFolderSelectorBackend Backend {
 			get { return (IFolderSelectorBackend)BackendHost.Backend; }
 		}
 

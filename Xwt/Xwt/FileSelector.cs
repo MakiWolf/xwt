@@ -69,7 +69,7 @@ namespace Xwt
 			return new WidgetBackendHost ();
 		}
 
-		IFileSelectorBackend Backend {
+		new IFileSelectorBackend Backend {
 			get { return (IFileSelectorBackend)BackendHost.Backend; }
 		}
 

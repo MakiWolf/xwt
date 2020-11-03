@@ -47,7 +47,7 @@ namespace Xwt
 			return new WidgetBackendHost ();
 		}
 		
-		IFrameBackend Backend {
+		new IFrameBackend Backend {
 			get { return (IFrameBackend)BackendHost.Backend; }
 		}
 		

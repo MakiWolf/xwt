@@ -46,7 +46,7 @@ namespace Xwt
 			}
 		}
 
-		IRichTextViewBackend Backend {
+		new IRichTextViewBackend Backend {
 			get { return (IRichTextViewBackend) BackendHost.Backend; }
 		}
 

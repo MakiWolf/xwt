@@ -89,7 +89,7 @@ namespace Xwt
 			return new WidgetBackendHost ();
 		}
 		
-		IButtonBackend Backend {
+		new IButtonBackend Backend {
 			get { return (IButtonBackend) BackendHost.Backend; }
 		}
 		

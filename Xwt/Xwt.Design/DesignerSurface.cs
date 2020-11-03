@@ -39,7 +39,7 @@ namespace Xwt.Design
 		{
 		}
 		
-		IDesignerSurfaceBackend Backend {
+		new IDesignerSurfaceBackend Backend {
 			get { return (IDesignerSurfaceBackend) BackendHost.Backend; }
 		}
 
