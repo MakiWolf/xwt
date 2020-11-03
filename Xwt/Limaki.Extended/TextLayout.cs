@@ -11,7 +11,21 @@ namespace Xwt.Drawing {
 			set { wrapMode = value; handler.SetWrapMode (Backend, value); }
 		}
 
+		public TextLayout (Context ctx) {
+			ToolkitEngine = ctx.ToolkitEngine;
+			handler = ToolkitEngine.TextLayoutBackendHandler;
+			Backend = handler.Create(ctx);
+		}
 	}
+
+	public sealed partial class Context {
+	}
+
+	public partial class VectorImage {
+		public VectorImageData Data => data;
+
+	}
+
 }
 
 namespace Xwt.Backends
