@@ -47,7 +47,7 @@ namespace Xwt.Drawing
 		{
 		}
 		
-		internal Image (object backend): base (backend)
+		public Image (object backend): base (backend)
 		{
 			Init ();
 		}
