@@ -74,7 +74,7 @@ namespace Xwt.GtkBackend
 			LineHeight = fe.Ascent + fe.Descent;
 			LineY = LineHeight ; 
 
-			var iLf = text.IndexOfAny (new char[]{ '\n', '\r' });
+			var iLf = text?.IndexOfAny (new char[]{ '\n', '\r' })??-1;
 			HasLineFeed = iLf >= 0;
 
 			var textWidth = layout.Width;
@@ -156,7 +156,7 @@ namespace Xwt.GtkBackend
 				var rect = new Pango.Rectangle();
 				line.GetExtents(ref rect, ref llrect);
 				var lline = new Line{
-					Pos = lli, Len = Math.Min (ll, text.Length - lli), Width = run.Glyphs.Width, Height = llrect.Height/scale
+					Pos = lli, Len = Math.Min (ll, text.Length - lli), Width = run.Glyphs?.Width??0, Height = llrect.Height/scale
 				};
 				if (iter.Line.IsParagraphStart)
 					ll++;
