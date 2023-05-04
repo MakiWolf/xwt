@@ -46,7 +46,8 @@ namespace Xwt.GtkBackend.WebKit
 
 #if XWT_GTKSHARP3
 
-		bool Gtk.IScrollable.GetBorder (Gtk.Border border) {
+		bool Gtk.IScrollable.GetBorder (out Gtk.Border border) {
+			border = default;
 			return true;
 		}
 #endif
