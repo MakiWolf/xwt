@@ -276,7 +276,11 @@ namespace Xwt.GtkBackend
 		{
 			if (Widget != null && disposing && !destroyed) {
 				MarkDestroyed (Frontend);
+#if XWT_GTK3
+				Widget.Dispose ();
+#else			
 				Widget.Destroy ();
+#endif
 			}
 			if (IMContext != null)
 				IMContext.Dispose ();
@@ -349,7 +353,11 @@ namespace Xwt.GtkBackend
 		
 		public virtual object Font {
 			get {
+#if XWT_GTKSHARP3				
+				return customFont ?? Widget.Style.FontDesc;
+#else				
 				return customFont ?? Widget.Style.FontDescription;
+#endif
 			}
 			set {
 				var fd = (Pango.FontDescription) value;
