@@ -150,8 +150,12 @@ namespace Xwt.GtkBackend
 
 		static SearchEntry ()
 		{
-			clearImage = Xwt.Drawing.Image.FromResource ("searchbox-clear-16.png");
-			searchImage = Xwt.Drawing.Image.FromResource ("searchbox-search-16.png");
+			try {
+				clearImage = Xwt.Drawing.Image.FromResource(typeof(SearchEntry),"searchbox-clear-16.png");
+				searchImage = Xwt.Drawing.Image.FromResource(typeof(SearchEntry), "searchbox-search-16.png");
+			} catch {
+				
+			}
 		}
 
 		public SearchEntry ()
@@ -404,7 +408,11 @@ namespace Xwt.GtkBackend
 		protected override void OnDestroyed ()
 		{
 			if (menu != null) {
+#if XWT_GTK3
+				menu.Dispose();
+#else
 				menu.Destroy ();
+#endif				
 				menu = null;
 			}
 			base.OnDestroyed ();

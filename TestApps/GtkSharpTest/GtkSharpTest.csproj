@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net472</TargetFrameworks>
+    <TargetFrameworks></TargetFrameworks>
     <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <PropertyGroup>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -16,6 +17,14 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Xwt\Xwt.csproj" />
     <ProjectReference Include="..\Samples\Samples.csproj" />
-    <ProjectReference Include="..\..\Xwt.Gtk2\Xwt.Gtk2.csproj" />
+    <ProjectReference Include="..\..\Xwt.GtkSharp\Xwt.GtkSharp.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\Gtk3Test\AssemblyInfo.cs">
+      <Link>AssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\Gtk3Test\Main.cs">
+      <Link>Main.cs</Link>
+    </Compile>
   </ItemGroup>
 </Project>

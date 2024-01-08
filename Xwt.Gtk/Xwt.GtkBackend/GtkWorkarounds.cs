@@ -30,11 +30,14 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
-
+using System.Text.RegularExpressions;
+using Gtk;
+using static Xwt.Interop.DllImportGtk;
+using static Xwt.Interop.DllImportGdk;
+using static Xwt.Interop.DllImportPango;
+using static Xwt.Interop.DllImportGObj;
 #if XWT_GTK3
-using GtkTreeModel = Gtk.ITreeModel;
-#else
-using GtkTreeModel = Gtk.TreeModel;
+using TreeModel = Gtk.ITreeModel;
 #endif
 
 namespace Xwt.GtkBackend
@@ -42,40 +45,40 @@ namespace Xwt.GtkBackend
 	public static class GtkWorkarounds
 	{
 		const string LIBOBJC ="/usr/lib/libobjc.dylib";
-		
+
 		[DllImport (LIBOBJC, EntryPoint = "sel_registerName")]
 		static extern IntPtr sel_registerName (string selector);
-		
+
 		[DllImport (LIBOBJC, EntryPoint = "objc_getClass")]
 		static extern IntPtr objc_getClass (string klass);
-		
+
 		[DllImport (LIBOBJC, EntryPoint = "objc_msgSend")]
 		static extern IntPtr objc_msgSend_IntPtr (IntPtr klass, IntPtr selector);
-		
+
 		[DllImport (LIBOBJC, EntryPoint = "objc_msgSend")]
 		static extern void objc_msgSend_void_bool (IntPtr klass, IntPtr selector, bool arg);
-		
+
 		[DllImport (LIBOBJC, EntryPoint = "objc_msgSend")]
 		static extern bool objc_msgSend_bool (IntPtr klass, IntPtr selector);
-		
+
 		[DllImport (LIBOBJC, EntryPoint = "objc_msgSend")]
 		static extern int objc_msgSend_NSInt32_NSInt32 (IntPtr klass, IntPtr selector, int arg);
 
 		[DllImport (LIBOBJC, EntryPoint = "objc_msgSend")]
 		static extern long objc_msgSend_NSInt64_NSInt64 (IntPtr klass, IntPtr selector, long arg);
-		
+
 		[DllImport (LIBOBJC, EntryPoint = "objc_msgSend")]
 		static extern uint objc_msgSend_NSUInt32 (IntPtr klass, IntPtr selector);
 
 		[DllImport (LIBOBJC, EntryPoint = "objc_msgSend")]
 		static extern ulong objc_msgSend_NSUInt64 (IntPtr klass, IntPtr selector);
-		
+
 		[DllImport (LIBOBJC, EntryPoint = "objc_msgSend_stret")]
 		static extern void objc_msgSend_CGRect32 (out CGRect32 rect, IntPtr klass, IntPtr selector);
 
 		[DllImport (LIBOBJC, EntryPoint = "objc_msgSend_stret")]
 		static extern void objc_msgSend_CGRect64 (out CGRect64 rect, IntPtr klass, IntPtr selector);
-		
+
 		[DllImport (GtkInterop.LIBGTK)]
 		static extern IntPtr gdk_quartz_window_get_nswindow (IntPtr window);
 
@@ -103,21 +106,21 @@ namespace Xwt.GtkBackend
 		static IntPtr sharedApp;
 		static IntPtr cls_NSEvent;
 		static IntPtr sel_modifierFlags;
-		
+
 		const int NSCriticalRequest = 0;
 		const int NSInformationalRequest = 10;
-		
+
 		static System.Reflection.MethodInfo glibObjectGetProp, glibObjectSetProp;
-		
+
 		public static int GtkMajorVersion = 2, GtkMinorVersion = 12, GtkMicroVersion = 0;
 		static bool oldMacKeyHacks = false;
-		
+
 		static GtkWorkarounds ()
 		{
 			if (Platform.IsMac) {
 				InitMac ();
 			}
-			
+
 			var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
 			glibObjectSetProp = typeof (GLib.Object).GetMethod ("SetProperty", flags);
 			glibObjectGetProp = typeof (GLib.Object).GetMethod ("GetProperty", flags);
@@ -134,7 +137,7 @@ namespace Xwt.GtkBackend
 				}
 			}
 			#endif
-			
+
 			for (int i = 1; i < 20; i++) {
 				if (Gtk.Global.CheckVersion (2, (uint)GtkMinorVersion, (uint)i) == null) {
 					GtkMicroVersion = i;
@@ -142,16 +145,21 @@ namespace Xwt.GtkBackend
 					break;
 				}
 			}
-			
+
 			//opt into the fixes on GTK+ >= 2.24.8
 			if (Platform.IsMac) {
 				try {
 					gdk_quartz_set_fix_modifiers (true);
-				} catch (EntryPointNotFoundException) {
+				}
+#if XWT_GTKSHARP3
+				catch (NullReferenceException) {
+#else
+				catch (EntryPointNotFoundException) {
+#endif
 					oldMacKeyHacks = true;
 				}
 			}
-			
+
 			keymap.KeysChanged += delegate {
 				mappedKeys.Clear ();
 			};
@@ -173,7 +181,7 @@ namespace Xwt.GtkBackend
 			sel_invalidateShadow = sel_registerName ("invalidateShadow");
 			sharedApp = objc_msgSend_IntPtr (objc_getClass ("NSApplication"), sel_registerName ("sharedApplication"));
 		}
-		
+
 		static Gdk.Rectangle MacGetUsableMonitorGeometry (Gdk.Screen screen, int monitor)
 		{
 			IntPtr array = objc_msgSend_IntPtr (cls_NSScreen, sel_screens);
@@ -182,10 +190,10 @@ namespace Xwt.GtkBackend
 			Gdk.Rectangle xgeometry = screen.GetMonitorGeometry (0);
 			IntPtr scrn;
 			int i = 0;
-			
+
 			while ((scrn = objc_msgSend_IntPtr (iter, sel_nextObject)) != IntPtr.Zero && i < monitor)
 				i++;
-			
+
 			if (scrn == IntPtr.Zero)
 				return screen.GetMonitorGeometry (monitor);
 
@@ -201,12 +209,12 @@ namespace Xwt.GtkBackend
 				visible = new CGRect64 (visible32);
 				frame = new CGRect64 (frame32);
 			}
-			
+
 			// Note: Frame and VisibleFrame rectangles are relative to monitor 0, but we need absolute
 			// coordinates.
 			visible.X += xgeometry.X;
 			frame.X += xgeometry.X;
-			
+
 			// VisibleFrame.Y is the height of the Dock if it is at the bottom of the screen, so in order
 			// to get the menu height, we just figure out the difference between the visibleFrame height
 			// and the actual frame height, then subtract the Dock height.
@@ -214,25 +222,25 @@ namespace Xwt.GtkBackend
 			// We need to swap the Y offset with the menu height because our callers expect the Y offset
 			// to be from the top of the screen, not from the bottom of the screen.
 			double x, y, width, height;
-			
+
 			if (visible.Height < frame.Height) {
 				double dockHeight = visible.Y - frame.Y;
 				double menubarHeight = (frame.Height - visible.Height) - dockHeight;
-				
+
 				height = frame.Height - menubarHeight - dockHeight;
 				y = ygeometry.Y + menubarHeight;
 			} else {
 				height = frame.Height;
 				y = ygeometry.Y;
 			}
-			
+
 			// Takes care of the possibility of the Dock being positioned on the left or right edge of the screen.
 			width = System.Math.Min (visible.Width, frame.Width);
 			x = System.Math.Max (visible.X, frame.X);
-			
+
 			return new Gdk.Rectangle ((int) x, (int) y, (int) width, (int) height);
 		}
-		
+
 		static void MacRequestAttention (bool critical)
 		{
 			int kind = critical?  NSCriticalRequest : NSInformationalRequest;
@@ -242,7 +250,7 @@ namespace Xwt.GtkBackend
 				objc_msgSend_NSInt32_NSInt32 (sharedApp, sel_requestUserAttention, kind);
 			}
 		}
-		
+
 		public static void GrabDesktopFocus ()
 		{
 			objc_msgSend_void_bool (sharedApp, sel_activateIgnoringOtherApps, true);
@@ -318,7 +326,7 @@ namespace Xwt.GtkBackend
 
 			return new Gdk.Rectangle (x, y, width, height);
 		}
-		
+
 		public static Gdk.Rectangle GetUsableMonitorGeometry (this Gdk.Screen screen, int monitor)
 		{
 			if (Platform.IsWindows)
@@ -326,49 +334,49 @@ namespace Xwt.GtkBackend
 
 			if (Platform.IsMac)
 				return MacGetUsableMonitorGeometry (screen, monitor);
-			
+
 			return screen.GetMonitorGeometry (monitor);
 		}
-		
+
 		public static int RunDialogWithNotification (Gtk.Dialog dialog)
 		{
 			if (Platform.IsMac)
 				MacRequestAttention (dialog.Modal);
-			
+
 			return dialog.Run ();
 		}
-		
+
 		public static void PresentWindowWithNotification (this Gtk.Window window)
 		{
 			window.Present ();
-			
+
 			if (Platform.IsMac) {
 				var dialog = window as Gtk.Dialog;
 				MacRequestAttention (dialog == null? false : dialog.Modal);
 			}
 		}
-		
+
 		public static GLib.Value GetProperty (this GLib.Object obj, string name)
 		{
 			return (GLib.Value) glibObjectGetProp.Invoke (obj, new object[] { name });
 		}
-		
+
 		public static void SetProperty (this GLib.Object obj, string name, GLib.Value value)
 		{
 			glibObjectSetProp.Invoke (obj, new object[] { name, value });
 		}
-		
+
 		public static bool TriggersContextMenu (this Gdk.EventButton evt)
 		{
 			return evt.Type == Gdk.EventType.ButtonPress && IsContextMenuButton (evt);
 		}
-		
+
 		public static bool IsContextMenuButton (this Gdk.EventButton evt)
 		{
 			if (evt.Button == 3 &&
 					(evt.State & (Gdk.ModifierType.Button1Mask | Gdk.ModifierType.Button2Mask)) == 0)
 				return true;
-			
+
 			if (Platform.IsMac) {
 				if (!oldMacKeyHacks &&
 					evt.Button == 1 &&
@@ -378,7 +386,7 @@ namespace Xwt.GtkBackend
 					return true;
 				}
 			}
-			
+
 			return false;
 		}
 
@@ -408,7 +416,7 @@ namespace Xwt.GtkBackend
 				return mtype;
 			}
 		}
-		
+
 		public static void GetPageScrollPixelDeltas (this Gdk.EventScroll evt, double pageSizeX, double pageSizeY,
 			out double deltaX, out double deltaY)
 		{
@@ -428,29 +436,32 @@ namespace Xwt.GtkBackend
 				}
 			}
 		}
-		
+
 		public static void AddValueClamped (this Gtk.Adjustment adj, double value)
 		{
 			adj.Value = System.Math.Max (adj.Lower, System.Math.Min (adj.Value + value, adj.Upper - adj.PageSize));
 		}
-		
-		[DllImport (GtkInterop.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
-		extern static bool gdk_event_get_scroll_deltas (IntPtr eventScroll, out double deltaX, out double deltaY);
+
 		static bool scrollDeltasNotSupported;
-		
+
 		public static bool GetEventScrollDeltas (Gdk.EventScroll evt, out double deltaX, out double deltaY)
 		{
 			if (!scrollDeltasNotSupported) {
 				try {
-					return gdk_event_get_scroll_deltas (evt.Handle, out deltaX, out deltaY);
-				} catch (EntryPointNotFoundException) {
+					return gdk_event_get_scroll_deltas(evt.Handle, out deltaX, out deltaY);
+				}
+#if XWT_GTKSHARP3
+				catch (NullReferenceException) {
+#else
+				catch (EntryPointNotFoundException) {
+#endif
 					scrollDeltasNotSupported = true;
 				}
 			}
 			deltaX = deltaY = 0;
 			return false;
 		}
-		
+
 		/// <summary>Shows a context menu.</summary>
 		/// <param name='menu'>The menu.</param>
 		/// <param name='parent'>The parent widget.</param>
@@ -483,41 +494,41 @@ namespace Xwt.GtkBackend
 					Gtk.Requisition request = m.SizeRequest ();
 					var screen = parent.Screen;
 					Gdk.Rectangle geometry = GetUsableMonitorGeometry (screen, screen.GetMonitorAtPoint (x, y));
-					
+
 					//whether to push or flip menus that would extend offscreen
 					//FIXME: this is the correct behaviour for mac, check other platforms
 					bool flip_left = true;
 					bool flip_up   = false;
-					
+
 					if (x + request.Width > geometry.X + geometry.Width) {
 						if (flip_left) {
 							x -= request.Width;
 						} else {
 							x = geometry.X + geometry.Width - request.Width;
 						}
-						
+
 						if (x < geometry.Left)
 							x = geometry.Left;
 					}
-					
+
 					if (y + request.Height > geometry.Y + geometry.Height) {
 						if (flip_up) {
 							y -= request.Height;
 						} else {
 							y = geometry.Y + geometry.Height - request.Height;
 						}
-						
+
 						if (y < geometry.Top)
 							y = geometry.Top;
 					}
-					
+
 					pushIn = false;
 				};
 			}
-			
+
 			uint time;
 			uint button;
-			
+
 			if (evt == null) {
 				time = Gtk.Global.CurrentEventTime;
 				button = 0;
@@ -525,44 +536,36 @@ namespace Xwt.GtkBackend
 				time = evt.Time;
 				button = evt.Button;
 			}
-			
+
 			//HACK: work around GTK menu issues on mac when passing button to menu.Popup
 			//some menus appear and immediately hide, and submenus don't activate
 			if (Platform.IsMac) {
 				button = 0;
 			}
-			
+
 			menu.Popup (null, null, posFunc, button, time);
 		}
-		
+
 		public static void ShowContextMenu (Gtk.Menu menu, Gtk.Widget parent, Gdk.EventButton evt)
 		{
 			ShowContextMenu (menu, parent, evt, Gdk.Rectangle.Zero);
 		}
-		
+
 		public static void ShowContextMenu (Gtk.Menu menu, Gtk.Widget parent, Gdk.Rectangle caret)
 		{
 			ShowContextMenu (menu, parent, null, caret);
 		}
-		
+
 		struct MappedKeys
 		{
 			public Gdk.Key Key;
 			public Gdk.ModifierType State;
 			public KeyboardShortcut[] Shortcuts;
 		}
-		
-		//introduced in GTK 2.20
-		[DllImport (GtkInterop.LIBGDK, CallingConvention = CallingConvention.Cdecl)]
-		extern static void gdk_keymap_add_virtual_modifiers (IntPtr keymap, ref Gdk.ModifierType state);
-		
-		//Custom patch in Mono Mac w/GTK+ 2.24.8+
-		[DllImport (GtkInterop.LIBGDK, CallingConvention = CallingConvention.Cdecl)]
-		extern static void gdk_quartz_set_fix_modifiers (bool fix);
-		
+
 		static Gdk.Keymap keymap = Gdk.Keymap.Default;
 		static Dictionary<ulong,MappedKeys> mappedKeys = new Dictionary<ulong,MappedKeys> ();
-		
+
 		/// <summary>Map raw GTK key input to work around platform bugs and decompose accelerator keys</summary>
 		/// <param name='evt'>The raw key event</param>
 		/// <param name='key'>The composed key</param>
@@ -576,27 +579,27 @@ namespace Xwt.GtkBackend
 			unchecked {
 				id = (((ulong)(uint)evt.State) | (((ulong)evt.HardwareKeycode) << 32) | (((ulong)evt.Group) << 48));
 			}
-			
+
 			MappedKeys mapped;
 			if (!mappedKeys.TryGetValue (id, out mapped))
 				mappedKeys[id] = mapped = MapKeys (evt);
-			
+
 			shortcuts = mapped.Shortcuts;
 			state = mapped.State;
 			key = mapped.Key;
 		}
-		
+
 		static MappedKeys MapKeys (Gdk.EventKey evt)
 		{
 			MappedKeys mapped;
 			ushort keycode = evt.HardwareKeycode;
 			Gdk.ModifierType modifier = evt.State;
 			byte grp = evt.Group;
-			
+
 			if (GtkMajorVersion > 2 || GtkMajorVersion <= 2 && GtkMinorVersion >= 20) {
 				gdk_keymap_add_virtual_modifiers (keymap.Handle, ref modifier);
 			}
-			
+
 			//full key mapping
 			uint keyval;
 			int effectiveGroup, level;
@@ -605,45 +608,45 @@ namespace Xwt.GtkBackend
 				out level, out consumedModifiers);
 			mapped.Key = (Gdk.Key)keyval;
 			mapped.State = FixMacModifiers (evt.State & ~consumedModifiers, grp);
-			
+
 			//decompose the key into accel combinations
 			var accelList = new List<KeyboardShortcut> ();
-			
+
 			const Gdk.ModifierType accelMods = Gdk.ModifierType.ShiftMask | Gdk.ModifierType.Mod1Mask
 				| Gdk.ModifierType.ControlMask | Gdk.ModifierType.SuperMask |Gdk.ModifierType.MetaMask;
-			
+
 			//all accels ignore the lock key
 			modifier &= ~Gdk.ModifierType.LockMask;
-			
+
 			//fully decomposed
 			TranslateKeyboardState (evt.HardwareKeycode, Gdk.ModifierType.None, 0,
 				out keyval, out effectiveGroup, out level, out consumedModifiers);
 			accelList.Add (new KeyboardShortcut ((Gdk.Key)keyval, FixMacModifiers (modifier, grp) & accelMods));
-			
+
 			//with shift composed
 			if ((modifier & Gdk.ModifierType.ShiftMask) != 0) {
 				keymap.TranslateKeyboardState (evt.HardwareKeycode, Gdk.ModifierType.ShiftMask, 0,
 					out keyval, out effectiveGroup, out level, out consumedModifiers);
-				
+
 				// Prevent consumption of non-Shift modifiers (that we didn't even provide!)
 				consumedModifiers &= Gdk.ModifierType.ShiftMask;
-				
+
 				var m = FixMacModifiers ((modifier & ~consumedModifiers), grp) & accelMods;
 				AddIfNotDuplicate (accelList, new KeyboardShortcut ((Gdk.Key)keyval, m));
 			}
-			
+
 			//with group 1 composed
 			if (grp == 1) {
 				TranslateKeyboardState (evt.HardwareKeycode, modifier & ~Gdk.ModifierType.ShiftMask, 1,
 					out keyval, out effectiveGroup, out level, out consumedModifiers);
-				
+
 				// Prevent consumption of Shift modifier (that we didn't even provide!)
 				consumedModifiers &= ~Gdk.ModifierType.ShiftMask;
-				
+
 				var m = FixMacModifiers ((modifier & ~consumedModifiers), 0) & accelMods;
 				AddIfNotDuplicate (accelList, new KeyboardShortcut ((Gdk.Key)keyval, m));
 			}
-			
+
 			//with group 1 and shift composed
 			if (grp == 1 && (modifier & Gdk.ModifierType.ShiftMask) != 0) {
 				TranslateKeyboardState (evt.HardwareKeycode, modifier, 1,
@@ -651,16 +654,16 @@ namespace Xwt.GtkBackend
 				var m = FixMacModifiers ((modifier & ~consumedModifiers), 0) & accelMods;
 				AddIfNotDuplicate (accelList, new KeyboardShortcut ((Gdk.Key)keyval, m));
 			}
-			
+
 			//and also allow the fully mapped key as an accel
 			AddIfNotDuplicate (accelList, new KeyboardShortcut (mapped.Key, mapped.State & accelMods));
-			
+
 			mapped.Shortcuts = accelList.ToArray ();
 			return mapped;
 		}
-		
+
 		// Workaround for bug "Bug 688247 - Ctrl+Alt key not work on windows7 with bootcamp on a Mac Book Pro"
-		// Ctrl+Alt should behave like right alt key - unfortunately TranslateKeyboardState doesn't handle it. 
+		// Ctrl+Alt should behave like right alt key - unfortunately TranslateKeyboardState doesn't handle it.
 		static void TranslateKeyboardState (uint hardware_keycode, Gdk.ModifierType state, int group, out uint keyval,
 			out int effective_group, out int level, out Gdk.ModifierType consumed_modifiers)
 		{
@@ -676,16 +679,16 @@ namespace Xwt.GtkBackend
 					state &= ~Gdk.ModifierType.ShiftMask;
 				}
 			}
-			
+
 			keymap.TranslateKeyboardState (hardware_keycode, state, group, out keyval, out effective_group,
 				out level, out consumed_modifiers);
 		}
-		
+
 		static Gdk.ModifierType FixMacModifiers (Gdk.ModifierType mod, byte grp)
 		{
 			if (!oldMacKeyHacks)
 				return mod;
-			
+
 			// Mac GTK+ maps the command key to the Mod1 modifier, which usually means alt/
 			// We map this instead to meta, because the Mac GTK+ has mapped the cmd key
 			// to the meta key (yay inconsistency!). IMO super would have been saner.
@@ -693,13 +696,13 @@ namespace Xwt.GtkBackend
 				mod ^= Gdk.ModifierType.Mod1Mask;
 				mod |= Gdk.ModifierType.MetaMask;
 			}
-			
+
 			//some versions of GTK map opt as mod5, which converts to the virtual super modifier
 			if ((mod & (Gdk.ModifierType.Mod5Mask | Gdk.ModifierType.SuperMask)) != 0) {
 				mod ^= (Gdk.ModifierType.Mod5Mask | Gdk.ModifierType.SuperMask);
 				mod |= Gdk.ModifierType.Mod1Mask;
 			}
-			
+
 			// When opt modifier is active, we need to decompose this to make the command appear correct for Mac.
 			// In addition, we can only inspect whether the opt/alt key is pressed by examining
 			// the key's "group", because the Mac GTK+ treats opt as a group modifier and does
@@ -707,10 +710,10 @@ namespace Xwt.GtkBackend
 			if (grp == (byte) 1) {
 				mod |= Gdk.ModifierType.Mod1Mask;
 			}
-			
+
 			return mod;
 		}
-		
+
 		static void AddIfNotDuplicate<T> (List<T> list, T item) where T : IEquatable<T>
 		{
 			for (int i = 0; i < list.Count; i++) {
@@ -719,7 +722,7 @@ namespace Xwt.GtkBackend
 			}
 			list.Add (item);
 		}
-		
+
 		/// <summary>Map raw GTK key input to work around platform bugs and decompose accelerator keys</summary>
 		/// <param name='evt'>The raw key event</param>
 		/// <param name='key'>The decomposed accelerator key</param>
@@ -732,7 +735,7 @@ namespace Xwt.GtkBackend
 			Gdk.ModifierType mappedMod;
 			KeyboardShortcut[] accels;
 			MapKeys (evt, out mappedKey, out mappedMod, out accels);
-			
+
 			keyval = (uint) mappedKey;
 			key = accels[0].Key;
 			mod = accels[0].Modifier;
@@ -740,7 +743,7 @@ namespace Xwt.GtkBackend
 
 		[System.Runtime.InteropServices.DllImport (GtkInterop.LIBGDK, CallingConvention = CallingConvention.Cdecl)]
 		static extern IntPtr gdk_win32_drawable_get_handle (IntPtr drawable);
-		
+
 		enum DwmWindowAttribute
 		{
 			NcRenderingEnabled = 1,
@@ -757,11 +760,11 @@ namespace Xwt.GtkBackend
 			ExcludedFromPeek,
 			Last,
 		}
-		
+
 		struct Win32Rect
 		{
 			public int Left, Top, Right, Bottom;
-			
+
 			public Win32Rect (int left, int top, int right, int bottom)
 			{
 				this.Left = left;
@@ -770,16 +773,16 @@ namespace Xwt.GtkBackend
 				this.Bottom = bottom;
 			}
 		}
-		
+
 		[DllImport ("dwmapi.dll")]
 		static extern int DwmGetWindowAttribute (IntPtr hwnd, DwmWindowAttribute attribute, out Win32Rect value, int valueSize);
-		
+
 		[DllImport ("dwmapi.dll")]
 		static extern int DwmIsCompositionEnabled (out bool enabled);
-		
+
 		[DllImport ("User32.dll")]
 		static extern bool GetWindowRect (IntPtr hwnd, out Win32Rect rect);
-		
+
 		public static void SetImCursorLocation (Gtk.IMContext ctx, Gdk.Window clientWindow, Gdk.Rectangle cursor)
 		{
 			// work around GTK+ Bug 663096 - Windows IME position is wrong when Aero glass is enabled
@@ -800,14 +803,14 @@ namespace Xwt.GtkBackend
 			}
 			ctx.CursorLocation = cursor;
 		}
-		
+
 		/// <summary>X coordinate of the pixels inside the right edge of the rectangle</summary>
 		/// <remarks>Workaround for inconsistency of Right property between GTK# versions</remarks>
 		public static int RightInside (this Gdk.Rectangle rect)
 		{
 			return rect.X + rect.Width - 1;
 		}
-		
+
 		/// <summary>Y coordinate of the pixels inside the bottom edge of the rectangle</summary>
 		/// <remarks>Workaround for inconsistency of Bottom property between GTK# versions#</remarks>
 		public static int BottomInside (this Gdk.Rectangle rect)
@@ -835,13 +838,16 @@ namespace Xwt.GtkBackend
 			objc_msgSend_IntPtr (ptr, sel_invalidateShadow);
 		}
 
+#if !XWT_GTK3
+
 		[DllImport (GtkInterop.LIBGTKGLUE, CallingConvention = CallingConvention.Cdecl)]
 		static extern void gtksharp_container_leak_fixed_marker ();
 
 		static HashSet<Type> fixedContainerTypes;
 		static Dictionary<IntPtr,ForallDelegate> forallCallbacks;
 		static bool containerLeakFixed;
-		
+
+
 		// Works around BXC #3801 - Managed Container subclasses are incorrectly resurrected, then leak.
 		// It does this by registering an alternative callback for gtksharp_container_override_forall, which
 		// ignores callbacks if the wrapper no longer exists. This means that the objects no longer enter a
@@ -897,9 +903,9 @@ namespace Xwt.GtkBackend
 				new Type[] { typeof(IntPtr), typeof(bool), typeof(IntPtr), typeof(IntPtr) },
 				typeof(GtkWorkarounds).Module,
 				true);
-			
+
 			var invokerType = typeof(Gtk.Container.CallbackInvoker);
-			
+
 			//this was based on compiling a similar method and disassembling it
 			ILGenerator il = dm.GetILGenerator ();
 			var IL_002b = il.DefineLabel ();
@@ -939,18 +945,18 @@ namespace Xwt.GtkBackend
 			il.Emit (OpCodes.Callvirt, tref.GetProperty ("Target").GetGetMethod ());
 			il.Emit (OpCodes.Isinst, typeof (Gtk.Container));
 			il.Emit (OpCodes.Stloc, loc_container);
-			
+
 			il.MarkLabel (IL_002b);
 			il.Emit (OpCodes.Ldloc, loc_container);
 			il.Emit (OpCodes.Brtrue, IL_003f);
-			
+
 			il.Emit (OpCodes.Ldarg_0);
 			il.Emit (OpCodes.Ldarg_1);
 			il.Emit (OpCodes.Ldarg_2);
 			il.Emit (OpCodes.Ldarg_3);
 			il.Emit (OpCodes.Call, typeof (Gtk.Container).GetMethod ("gtksharp_container_base_forall", BindingFlags.Static | BindingFlags.NonPublic));
 			il.Emit (OpCodes.Br, IL_0060);
-			
+
 			il.MarkLabel (IL_003f);
 			il.Emit (OpCodes.Ldloca_S, 2);
 			il.Emit (OpCodes.Ldarg_2);
@@ -967,9 +973,9 @@ namespace Xwt.GtkBackend
 			var forallMeth = typeof (Gtk.Container).GetMethod ("ForAll",
 				BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof (bool), typeof (Gtk.Callback) }, null);
 			il.Emit (OpCodes.Callvirt, forallMeth);
-			
+
 			il.MarkLabel (IL_0060);
-			
+
 			il.BeginCatchBlock (typeof (Exception));
 			il.Emit (OpCodes.Stloc, loc_ex);
 			il.Emit (OpCodes.Ldloc, loc_ex);
@@ -977,19 +983,38 @@ namespace Xwt.GtkBackend
 			il.Emit (OpCodes.Call, typeof (GLib.ExceptionManager).GetMethod ("RaiseUnhandledException"));
 			il.Emit (OpCodes.Leave, label_return);
 			il.EndExceptionBlock ();
-			
+
 			il.MarkLabel (label_return);
 			il.Emit (OpCodes.Ret);
-			
+
 			return (ForallDelegate) dm.CreateDelegate (typeof (ForallDelegate));
 		}
-		
+
+
 		[UnmanagedFunctionPointer (CallingConvention.Cdecl)]
 		delegate void ForallDelegate (IntPtr container, bool include_internals, IntPtr cb, IntPtr data);
-		
+
 		[DllImport(GtkInterop.LIBGTKGLUE, CallingConvention = CallingConvention.Cdecl)]
 		static extern void gtksharp_container_override_forall (IntPtr gtype, ForallDelegate cb);
+#else
+		public static void FixContainerLeak (Gtk.Container c) { }
+#endif
 
+		const string urlRegexStr = @"(http|ftp)s?\:\/\/[\w\d\.,;_/\-~%@()+:?&^=#!]*[\w\d/]";
+		static readonly Regex UrlRegex  = new Regex (urlRegexStr, RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+
+		public static string MarkupLinks (string text)
+		{
+			if (GtkMinorVersion < 18)
+				return text;
+			return UrlRegex.Replace (text, MatchToUrl);
+		}
+
+		static string MatchToUrl (System.Text.RegularExpressions.Match m)
+		{
+			var s = m.ToString ();
+			return $"<a href='{s}'>{s.Replace ("_", "__")}</a>";
+		}
 		public static void SetLinkHandler (this Gtk.Label label, Action<string> urlHandler)
 		{
 			if (GtkMajorVersion > 2 || GtkMajorVersion <= 2 && GtkMinorVersion >= 18)
@@ -1026,12 +1051,6 @@ namespace Xwt.GtkBackend
 
 		static bool canSetOverlayScrollbarPolicy = true;
 
-		[DllImport (GtkInterop.LIBGTK)]
-		static extern void gtk_scrolled_window_set_overlay_policy (IntPtr sw, Gtk.PolicyType hpolicy, Gtk.PolicyType vpolicy);
-
-		[DllImport (GtkInterop.LIBGTK)]
-		static extern void gtk_scrolled_window_get_overlay_policy (IntPtr sw, out Gtk.PolicyType hpolicy, out Gtk.PolicyType vpolicy);
-
 		public static void SetOverlayScrollbarPolicy (Gtk.ScrolledWindow sw, Gtk.PolicyType hpolicy, Gtk.PolicyType vpolicy)
 		{
 			if (!canSetOverlayScrollbarPolicy) {
@@ -1041,7 +1060,12 @@ namespace Xwt.GtkBackend
 				gtk_scrolled_window_set_overlay_policy (sw.Handle, hpolicy, vpolicy);
 				return;
 			} catch (DllNotFoundException) {
-			} catch (EntryPointNotFoundException) {
+			}
+#if XWT_GTKSHARP3
+			catch (NullReferenceException)	{
+#else
+			catch (EntryPointNotFoundException) {
+#endif
 			}
 		}
 
@@ -1055,32 +1079,34 @@ namespace Xwt.GtkBackend
 				gtk_scrolled_window_get_overlay_policy (sw.Handle, out hpolicy, out vpolicy);
 				return;
 			} catch (DllNotFoundException) {
-			} catch (EntryPointNotFoundException) {
+			}
+#if XWT_GTKSHARP3
+			catch (NullReferenceException) {
+#else
+				catch (EntryPointNotFoundException) {
+#endif
 			}
 			hpolicy = vpolicy = 0;
 			canSetOverlayScrollbarPolicy = false;
 		}
 
-		[DllImport (GtkInterop.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
-		static extern bool gtk_tree_view_get_tooltip_context (IntPtr raw, ref int x, ref int y, bool keyboard_tip, out IntPtr model, out IntPtr path, IntPtr iter);
-
 		//the GTK# version of this has 'out' instead of 'ref', preventing passing the x,y values in
 		public static bool GetTooltipContext (this Gtk.TreeView tree, ref int x, ref int y, bool keyboardTip,
-			 out GtkTreeModel model, out Gtk.TreePath path, out Gtk.TreeIter iter)
+			out TreeModel model, out Gtk.TreePath path, out Gtk.TreeIter iter)
 		{
-			IntPtr intPtr = Marshal.AllocHGlobal (Marshal.SizeOf (typeof (Gtk.TreeIter)));
+			IntPtr intPtr = Marshal.AllocHGlobal (Marshal.SizeOf (typeof(Gtk.TreeIter)));
 			IntPtr handle;
 			IntPtr intPtr2;
-			bool result = gtk_tree_view_get_tooltip_context (tree.Handle, ref x, ref y, keyboardTip, out handle, out intPtr2, intPtr);
+			bool result = gtk_tree_view_get_tooltip_context (tree.Handle, ref x, ref y, keyboardTip, out handle,
+				out intPtr2, intPtr);
 			model = Gtk.TreeModelAdapter.GetObject (handle, false);
-			path = intPtr2 == IntPtr.Zero ? null : ((Gtk.TreePath) GLib.Opaque.GetOpaque (intPtr2, typeof (Gtk.TreePath), false));
+			path = intPtr2 == IntPtr.Zero ?
+				null :
+				((Gtk.TreePath) GLib.Opaque.GetOpaque (intPtr2, typeof(Gtk.TreePath), false));
 			iter = Gtk.TreeIter.New (intPtr);
 			Marshal.FreeHGlobal (intPtr);
 			return result;
 		}
-
-		[DllImport (GtkInterop.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
-		static extern void gtk_image_menu_item_set_always_show_image (IntPtr menuitem, bool alwaysShow);
 
 		public static void ForceImageOnMenuItem (Gtk.ImageMenuItem mi)
 		{
@@ -1088,30 +1114,12 @@ namespace Xwt.GtkBackend
 				gtk_image_menu_item_set_always_show_image (mi.Handle, true);
 		}
 
-		#if XWT_GTK3
+#if XWT_GTK3
 		// GTK3: Temp workaround, since GTK 3 has gtk_widget_get_scale_factor, but no gtk_icon_set_render_icon_scaled
 		static bool supportsHiResIcons = false;
-		#else
+#else
 		static bool supportsHiResIcons = true;
-		#endif
-
-		[DllImport (GtkInterop.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
-		static extern void gtk_icon_source_set_scale (IntPtr source, double scale);
-
-		[DllImport (GtkInterop.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
-		static extern void gtk_icon_source_set_scale_wildcarded (IntPtr source, bool setting);
-
-		[DllImport (GtkInterop.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
-		static extern double gtk_widget_get_scale_factor (IntPtr widget);
-
-		[DllImport (GtkInterop.LIBGDK, CallingConvention = CallingConvention.Cdecl)]
-		static extern double gdk_screen_get_monitor_scale_factor (IntPtr widget, int monitor);
-
-		[DllImport (GtkInterop.LIBGOBJECT, CallingConvention = CallingConvention.Cdecl)]
-		static extern IntPtr g_object_get_data (IntPtr source, string name);
-
-		[DllImport (GtkInterop.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
-		static extern IntPtr gtk_icon_set_render_icon_scaled (IntPtr handle, IntPtr style, int direction, int state, int size, IntPtr widget, IntPtr intPtr, ref double scale);
+#endif
 
 		public static bool SetSourceScale (Gtk.IconSource source, double scale)
 		{
@@ -1122,7 +1130,12 @@ namespace Xwt.GtkBackend
 				gtk_icon_source_set_scale (source.Handle, scale);
 				return true;
 			} catch (DllNotFoundException) {
-			} catch (EntryPointNotFoundException) {
+			}
+#if XWT_GTKSHARP3
+			catch (NullReferenceException) {
+#else
+			catch (EntryPointNotFoundException) {
+#endif
 			}
 			supportsHiResIcons = false;
 			return false;
@@ -1137,7 +1150,12 @@ namespace Xwt.GtkBackend
 				gtk_icon_source_set_scale_wildcarded (source.Handle, setting);
 				return true;
 			} catch (DllNotFoundException) {
-			} catch (EntryPointNotFoundException) {
+			}
+#if XWT_GTKSHARP3
+			catch (NullReferenceException) {
+#else
+			catch (EntryPointNotFoundException) {
+#endif
 			}
 			supportsHiResIcons = false;
 			return false;
@@ -1155,7 +1173,12 @@ namespace Xwt.GtkBackend
 				else
 					return null;
 			} catch (DllNotFoundException) {
-			} catch (EntryPointNotFoundException) {
+			}
+#if XWT_GTKSHARP3
+			catch (NullReferenceException){
+#else
+			catch (EntryPointNotFoundException) {
+#endif
 			}
 			supportsHiResIcons = false;
 			return null;
@@ -1173,12 +1196,17 @@ namespace Xwt.GtkBackend
 			try {
 				return gtk_widget_get_scale_factor (w.Handle);
 			} catch (DllNotFoundException) {
-			} catch (EntryPointNotFoundException) {
+			}
+#if XWT_GTKSHARP3
+			catch (NullReferenceException) {
+#else
+				catch (EntryPointNotFoundException) {
+#endif
 			}
 			supportsHiResIcons = false;
 			return 1;
 		}
-		
+
 		public static double GetScaleFactor (this Gdk.Screen screen, int monitor)
 		{
 			if (!supportsHiResIcons)
@@ -1187,13 +1215,18 @@ namespace Xwt.GtkBackend
 			try {
 				return gdk_screen_get_monitor_scale_factor (screen.Handle, monitor);
 			} catch (DllNotFoundException) {
-			} catch (EntryPointNotFoundException) {
+			}
+#if XWT_GTKSHARP3
+			catch (NullReferenceException){
+#else
+			catch (EntryPointNotFoundException) {
+#endif
 			}
 			supportsHiResIcons = false;
 			return 1;
 		}
 
-		
+
 		public static Gdk.Pixbuf RenderIcon (this Gtk.IconSet iconset, Gtk.Style style, Gtk.TextDirection direction, Gtk.StateType state, Gtk.IconSize size, Gtk.Widget widget, string detail, double scale)
 		{
 			if (scale == 1d)
@@ -1209,7 +1242,12 @@ namespace Xwt.GtkBackend
 				GLib.Marshaller.Free (intPtr);
 				return result;
 			} catch (DllNotFoundException) {
-			} catch (EntryPointNotFoundException) {
+			}
+#if XWT_GTKSHARP3
+			catch (NullReferenceException) {
+#else
+			catch (EntryPointNotFoundException) {
+#endif
 			}
 			supportsHiResIcons = false;
 			return null;
@@ -1218,11 +1256,11 @@ namespace Xwt.GtkBackend
 
 		public static Gtk.Bin CreateComboBoxEntry()
 		{
-			#if XWT_GTK3
+#if XWT_GTK3
 			return Gtk.ComboBoxText.NewWithEntry ();
-			#else
+#else
 			return new Gtk.ComboBoxEntry ();
-			#endif
+#endif
 		}
 
 
@@ -1239,7 +1277,7 @@ namespace Xwt.GtkBackend
 		/// the widget is a container) on top of their root window.
 		/// In this case pointer events may come from child windows and contain
 		/// wrong coordinates (relative to child window and not to the widget itself).
-		/// 
+		///
 		/// CheckPointerCoordinates checks whether the events source window is not
 		/// the widgets root window and adjusts the coordinates to relative
 		/// to the widget and not to its child.
@@ -1255,39 +1293,26 @@ namespace Xwt.GtkBackend
 			return new Xwt.Point (x, y);
 		}
 
-
-		[DllImport(GtkInterop.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
-		static extern IntPtr gtk_message_dialog_get_message_area(IntPtr raw);
-		
 		public static Gtk.Box GetMessageArea(this Gtk.MessageDialog dialog)
 		{
-			#if XWT_GTK3
+#if XWT_GTK3
 			// according to Gtk docs MessageArea should always be a Gtk.Box, but we test this
 			// to be on the safe side.
 			var messageArea = dialog.MessageArea as Gtk.Box;
 			return messageArea ?? dialog.ContentArea;
-			#else
+#else
 			if (GtkWorkarounds.GtkMajorVersion <= 2 && GtkWorkarounds.GtkMinorVersion < 22) // message area not present before 2.22
 				return dialog.VBox;
 			IntPtr raw_ret = gtk_message_dialog_get_message_area(dialog.Handle);
 			Gtk.Box ret = GLib.Object.GetObject(raw_ret) as Gtk.Box;
 			return ret;
-			#endif
+#endif
 		}
-
-
-		[DllImport(GtkInterop.LIBGOBJECT, CallingConvention = CallingConvention.Cdecl)]
-		static extern IntPtr g_signal_stop_emission_by_name(IntPtr raw, string name);
 
 		public static void StopSignal (this GLib.Object gobject, string signalid)
 		{
 			g_signal_stop_emission_by_name (gobject.Handle, signalid);
 		}
-
-		[DllImport(GtkInterop.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
-		static extern IntPtr gtk_binding_set_find (string setName);
-		[DllImport(GtkInterop.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
-		static extern void gtk_binding_entry_remove (IntPtr bindingSet, uint keyval, Gdk.ModifierType modifiers);
 
 		public static void RemoveKeyBindingFromClass (GLib.GType gtype, Gdk.Key key, Gdk.ModifierType modifiers)
 		{
@@ -1301,18 +1326,20 @@ namespace Xwt.GtkBackend
 			return g_object_get_data (o.Handle, name);
 		}
 
-		[DllImport (GtkInterop.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
-		static extern void gtk_object_set_data (IntPtr raw, IntPtr key, IntPtr data);
-
 		public static void SetData<T> (GLib.Object gtkobject, string key, T data) where T : struct
 		{
-			IntPtr pkey = GLib.Marshaller.StringToPtrGStrdup (key);
 			IntPtr pdata = Marshal.AllocHGlobal (Marshal.SizeOf (data));
 			Marshal.StructureToPtr (data, pdata, false);
+#if XWT_GTKSHARP3
+			g_object_set_data (gtkobject.Handle, key, pdata);
+
+#else
+			IntPtr pkey = GLib.Marshaller.StringToPtrGStrdup (key);
 			gtk_object_set_data (gtkobject.Handle, pkey, pdata);
-			Marshal.FreeHGlobal (pdata);
 			GLib.Marshaller.Free (pkey);
-			gtkobject.Data [key] = data;
+#endif
+			Marshal.FreeHGlobal (pdata);
+			gtkobject.Data[key] = data;
 		}
 
 		public static void SetTransparentBgHint (this Gtk.Widget widget, bool enable)
@@ -1333,12 +1360,6 @@ namespace Xwt.GtkBackend
 				return gdk_win32_drawable_get_handle (window.GdkWindow.Handle);
 			return gdk_x11_drawable_get_xid (window.GdkWindow.Handle);
 		}
-
-		[DllImport(GtkInterop.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
-		private static extern bool gtk_selection_data_set_uris(IntPtr raw, IntPtr[] uris);
-
-		[DllImport(GtkInterop.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
-		private static extern IntPtr gtk_selection_data_get_uris(IntPtr raw);
 
 		public static bool SetUris(this Gtk.SelectionData data, string[] uris)
 		{
@@ -1400,22 +1421,22 @@ namespace Xwt.GtkBackend
 
 			using (var attr = iter.SafeGetCopy (Pango.AttrType.Foreground)) {
 				if (attr != null) {
-					#if XWT_GTK3
+#if XWT_GTK3
 					tag.Foreground = ((Pango.AttrForeground)attr).Color.ToString();
-					#else
+#else
 					tag.Foreground = ((Gdk.PangoAttrEmbossColor)attr).Color.ToString ();
-					#endif
+#endif
 					result = true;
 				}
 			}
 
 			using (var attr = iter.SafeGetCopy (Pango.AttrType.Background)) {
 				if (attr != null) {
-				#if XWT_GTK3
+#if XWT_GTK3
 					tag.Foreground = ((Pango.AttrBackground)attr).Color.ToString();
-					#else
+#else
 					tag.Background = ((Gdk.PangoAttrEmbossColor)attr).Color.ToString ();
-					#endif
+#endif
 					result = true;
 				}
 			}
@@ -1451,12 +1472,6 @@ namespace Xwt.GtkBackend
 			return result;
 		}
 
-		[DllImport (GtkInterop.LIBPANGO, CallingConvention = CallingConvention.Cdecl)]
-		private static extern IntPtr pango_attribute_copy (IntPtr raw);
-
-		[DllImport (GtkInterop.LIBPANGO, CallingConvention = CallingConvention.Cdecl)]
-		private static extern IntPtr pango_attr_iterator_get (IntPtr raw, int type);
-
 		public static Pango.Attribute SafeGetCopy (this Pango.AttrIterator iter, Pango.AttrType type)
 		{
 			try {
@@ -1472,43 +1487,43 @@ namespace Xwt.GtkBackend
 			}
 		}
 	}
-	
+
 	public struct KeyboardShortcut : IEquatable<KeyboardShortcut>
 	{
 		public static readonly KeyboardShortcut Empty = new KeyboardShortcut ((Gdk.Key) 0, (Gdk.ModifierType) 0);
-		
+
 		Gdk.ModifierType modifier;
 		Gdk.Key key;
-		
+
 		public KeyboardShortcut (Gdk.Key key, Gdk.ModifierType modifier)
 		{
 			this.modifier = modifier;
 			this.key = key;
 		}
-		
+
 		public Gdk.Key Key {
 			get { return key; }
 		}
-		
+
 		public Gdk.ModifierType Modifier {
 			get { return modifier; }
 		}
-		
+
 		public bool IsEmpty {
 			get { return Key == (Gdk.Key) 0; }
 		}
-		
+
 		public override bool Equals (object obj)
 		{
 			return obj is KeyboardShortcut && this.Equals ((KeyboardShortcut) obj);
 		}
-		
+
 		public override int GetHashCode ()
 		{
 			//FIXME: we're only using a few bits of mod and mostly the lower bits of key - distribute it better
 			return (int) Key ^ (int) Modifier;
 		}
-		
+
 		public bool Equals (KeyboardShortcut other)
 		{
 			return other.Key == Key && other.Modifier == Modifier;

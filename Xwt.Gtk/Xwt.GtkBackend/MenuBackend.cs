@@ -75,7 +75,11 @@ namespace Xwt.GtkBackend
 
 		public virtual object Font {
 			get {
+#if XWT_GTKSHARP3				
+				return customFont ?? menu.Style.FontDesc;
+#else
 				return customFont ?? menu.Style.FontDescription;
+#endif
 			}
 			set {
 				customFont = (Pango.FontDescription) value;
@@ -109,7 +113,11 @@ namespace Xwt.GtkBackend
 		{
 			Gtk.MenuItem item = ((MenuItemBackend)menuItem).MenuItem;
 			menu.Remove (item);
+#if XWT_GTK3
+			item.Dispose ();
+#else			
 			item.Destroy ();
+#endif
 		}
 
 		public void EnableEvent (object eventId)
