@@ -137,7 +137,7 @@ namespace Xwt
 	/// <summary>
 	/// Interface implemented by data stores containing data for drag &amp; drop and copy &amp; paste operations
 	/// </summary>
-	public interface ITransferData
+	public partial interface ITransferData
 	{
 		/// <summary>
 		/// Gets the transferred text.

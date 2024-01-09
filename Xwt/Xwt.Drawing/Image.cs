@@ -47,7 +47,7 @@ namespace Xwt.Drawing
 		{
 		}
 		
-		internal Image (object backend): base (backend)
+		public Image (object backend): base (backend)
 		{
 			Init ();
 		}
@@ -462,7 +462,7 @@ namespace Xwt.Drawing
 			get {
 				return !requestedSize.IsZero ? requestedSize : GetDefaultSize ();
 			}
-			internal set {
+			protected set {
 				requestedSize = value;
 			}
 		}

@@ -71,7 +71,7 @@ namespace Xwt
 			return new WidgetBackendHost ();
 		}
 		
-		ICheckBoxBackend Backend {
+		new ICheckBoxBackend Backend {
 			get { return (ICheckBoxBackend) BackendHost.Backend; }
 		}
 		

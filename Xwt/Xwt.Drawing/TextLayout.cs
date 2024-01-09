@@ -32,7 +32,7 @@ using System.Collections.Generic;
 
 namespace Xwt.Drawing
 {
-	public sealed class TextLayout: XwtObject, IDisposable
+	public sealed partial class TextLayout: XwtObject, IDisposable
 	{
 		TextLayoutBackendHandler handler;
 
@@ -343,7 +343,7 @@ namespace Xwt.Drawing
 		WordElipsis
 	}
 	
-	class TextLayoutData
+	public class TextLayoutData
 	{
 		public double Width = -1;
 		public double Height = -1;

@@ -79,7 +79,7 @@ namespace Xwt
 			return new WidgetBackendHost ();
 		}
 		
-		INotebookBackend Backend {
+		new INotebookBackend Backend {
 			get { return (INotebookBackend) BackendHost.Backend; }
 		}
 		

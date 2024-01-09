@@ -31,7 +31,7 @@ using Xwt.Backends;
 
 namespace Xwt.Drawing
 {
-	public sealed class Context: DrawingPath
+	public sealed partial class Context: DrawingPath
 	{
 		ContextBackendHandler handler;
 		Pattern pattern;
@@ -49,11 +49,11 @@ namespace Xwt.Drawing
 			public SavedContext Previous;
 		}
 		
-		internal Context (object backend, Toolkit toolkit): this (backend, toolkit, toolkit.ContextBackendHandler)
+		public Context (object backend, Toolkit toolkit): this (backend, toolkit, toolkit.ContextBackendHandler)
 		{
 		}
 
-		internal Context (object backend, Toolkit toolkit, ContextBackendHandler handler, bool getGlobalStyles = true): base (backend, toolkit, handler)
+		public Context (object backend, Toolkit toolkit, ContextBackendHandler handler, bool getGlobalStyles = true): base (backend, toolkit, handler)
 		{
 			this.handler = handler;
 			if (getGlobalStyles) {
@@ -63,7 +63,7 @@ namespace Xwt.Drawing
 			}
 		}
 
-		internal ContextBackendHandler Handler {
+		public ContextBackendHandler Handler {
 			get { return handler; }
 		}
 

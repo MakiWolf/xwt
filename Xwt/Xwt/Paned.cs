@@ -90,7 +90,7 @@ namespace Xwt
 			return new WidgetBackendHost ();
 		}
 		
-		IPanedBackend Backend {
+		new IPanedBackend Backend {
 			get { return (IPanedBackend) BackendHost.Backend; }
 		}
 		

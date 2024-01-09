@@ -122,7 +122,7 @@ namespace Xwt
 			return new WidgetBackendHost ();
 		}
 		
-		ITreeViewBackend Backend {
+		new ITreeViewBackend Backend {
 			get { return (ITreeViewBackend) BackendHost.Backend; }
 		}
 

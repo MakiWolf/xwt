@@ -72,7 +72,7 @@ namespace Xwt
 			return new WidgetBackendHost ();
 		}
 
-		IFontSelectorBackend Backend {
+		new IFontSelectorBackend Backend {
 			get { return (IFontSelectorBackend) BackendHost.Backend; }
 		}
 

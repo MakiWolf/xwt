@@ -38,7 +38,7 @@ namespace Xwt.Backends
 	/// <summary>
 	/// A collection of data that is being transferred through drag &amp; drop or the clipboard
 	/// </summary>
-	public class TransferDataStore: ITransferData
+	public partial class TransferDataStore: ITransferData
 	{
 		Dictionary<TransferDataType,object> data = new Dictionary<TransferDataType,object> ();
 		
@@ -104,6 +104,8 @@ namespace Xwt.Backends
 			if (data.TryGetValue (type, out val)) {
 				if (val != null)
 					return val;
+				if (DataRequestCallback != null)
+					return DataRequestCallback(type);
 			}
 			return null;
 		}

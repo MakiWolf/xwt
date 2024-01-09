@@ -30,7 +30,8 @@ namespace Xwt.Drawing
 	public enum ImageFormat
 	{
 		ARGB32,
-		RGB24
+		RGB24,
+		Other
 	}
 }
 

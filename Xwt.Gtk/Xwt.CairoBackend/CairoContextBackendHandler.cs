@@ -300,27 +300,28 @@ namespace Xwt.CairoBackend
 			var be = (GtkTextLayoutBackendHandler.PangoBackend)ApplicationContext.Toolkit.GetSafeBackend (layout);
 			var pl = be.Layout;
 			CairoContextBackend ctx = (CairoContextBackend)backend;
-			ctx.Context.MoveTo (x, y);
-			if (layout.Height <= 0) {
+			var wrapper = new TextWrapper ();
+			var text = layout.Text;
+			wrapper.SingleLine = w => {
+				ctx.Context.MoveTo (x, y);
 				Pango.CairoHelper.ShowLayout (ctx.Context, pl);
-			} else {
-				var lc = pl.LineCount;
-				var scale = Pango.Scale.PangoScale;
-				double h = 0;
-				var fe = ctx.Context.FontExtents;
-				var baseline = fe.Ascent / (fe.Ascent + fe.Descent);
-				for (int i=0; i<lc; i++) {
-					var line = pl.Lines [i];
-					var ext = new Pango.Rectangle ();
-					var extl = new Pango.Rectangle ();
-					line.GetExtents (ref ext, ref extl);
-					h += h == 0 ? (extl.Height / scale * baseline) : (extl.Height / scale);
-					if (h > layout.Height)
-						break;
-					ctx.Context.MoveTo (x, y + h);
-					Pango.CairoHelper.ShowLayoutLine (ctx.Context, line);
-				}
-			}
+			};
+			var sll = new Pango.Layout (pl.Context) {
+				FontDescription = pl.FontDescription,
+				Width = pl.Width,
+				Ellipsize = pl.Ellipsize,
+				Wrap = pl.Wrap
+			};
+			wrapper.MultiLine = w => {
+				var st = text.Substring (w.LineStart, w.CursorPos - w.LineStart);
+				if (w.LineY + w.LineHeight > w.MaxHeight && w.CursorPos < text.Length)
+					st += ((char)0x2026).ToString ();
+				sll.SetText (st);
+				ctx.Context.MoveTo (x, y + w.LineY);
+				var line = sll.Lines [0];
+				Pango.CairoHelper.ShowLayoutLine (ctx.Context, line);			
+			};
+			wrapper.Wrap (layout, ctx);
 		}
 
 		public override void DrawImage (object backend, ImageDescription img, double x, double y)

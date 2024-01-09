@@ -82,7 +82,7 @@ namespace Xwt
 			return new WidgetBackendHost ();
 		}
 		
-		IRadioButtonBackend Backend {
+		new IRadioButtonBackend Backend {
 			get { return (IRadioButtonBackend) BackendHost.Backend; }
 		}
 		

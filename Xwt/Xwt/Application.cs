@@ -32,7 +32,7 @@ using System.Threading;
 
 namespace Xwt
 {
-	public static class Application
+	public static partial class Application
 	{
 		static Toolkit toolkit;
 		static ToolkitEngineBackend engine;
@@ -376,7 +376,7 @@ namespace Xwt
 		/// Notifies about unhandled exceptions using the UnhandledException event.
 		/// </summary>
 		/// <param name="ex">The unhandled Exception.</param>
-		internal static void NotifyException (Exception ex)
+		public static void NotifyException (Exception ex)
 		{
 			var unhandledException = UnhandledException;
 			if (unhandledException != null)
@@ -434,6 +434,7 @@ namespace Xwt
 		Wpf = 3,
 		XamMac = 4,
 		Gtk3 = 5,
+		Other = 6,
 	}
 }
 

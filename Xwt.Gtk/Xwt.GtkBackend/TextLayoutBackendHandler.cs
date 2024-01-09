@@ -35,7 +35,7 @@ using System.Runtime.InteropServices;
 
 namespace Xwt.GtkBackend
 {
-	public class GtkTextLayoutBackendHandler: TextLayoutBackendHandler
+	public partial class GtkTextLayoutBackendHandler: TextLayoutBackendHandler
 	{
 		static Cairo.Context SharedContext;
 		
@@ -126,12 +126,12 @@ namespace Xwt.GtkBackend
 			((IDisposable)SharedContext).Dispose ();
 		}
 		
-		public override object Create ()
-		{
-			return new PangoBackend {
-				Layout = Pango.CairoHelper.CreateLayout (SharedContext)
-			};
-		}
+		// public override object Create ()
+		// {
+		// 	return new PangoBackend {
+		// 		Layout = Pango.CairoHelper.CreateLayout (SharedContext)
+		// 	};
+		// }
 
 		public override void SetText (object backend, string text)
 		{

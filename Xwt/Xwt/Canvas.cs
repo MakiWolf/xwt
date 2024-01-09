@@ -194,7 +194,7 @@ namespace Xwt
 			return new WidgetBackendHost ();
 		}
 		
-		ICanvasBackend Backend {
+		new ICanvasBackend Backend {
 			get { return (ICanvasBackend) BackendHost.Backend; }
 		}
 		

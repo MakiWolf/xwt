@@ -53,7 +53,7 @@ namespace Xwt
 			return new WidgetBackendHost ();
 		}
 		
-		IComboBoxEntryBackend Backend {
+		new IComboBoxEntryBackend Backend {
 			get { return (IComboBoxEntryBackend) BackendHost.Backend; }
 		}
 		

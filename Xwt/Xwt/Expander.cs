@@ -24,7 +24,7 @@ namespace Xwt
 			return new WidgetBackendHost ();
 		}
 		
-		IExpanderBackend Backend {
+		new IExpanderBackend Backend {
 			get { return (IExpanderBackend)BackendHost.Backend; }
 		}
 

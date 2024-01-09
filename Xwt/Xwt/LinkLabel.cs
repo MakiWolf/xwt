@@ -73,7 +73,7 @@ namespace Xwt
 			}
 		}
 
-		ILinkLabelBackend Backend {
+		new ILinkLabelBackend Backend {
 			get { return (ILinkLabelBackend) BackendHost.Backend; }
 		}
 

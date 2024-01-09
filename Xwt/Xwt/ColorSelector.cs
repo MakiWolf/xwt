@@ -60,7 +60,7 @@ namespace Xwt
 			return new WidgetBackendHost ();
 		}
 
-		IColorSelectorBackend Backend {
+		new IColorSelectorBackend Backend {
 			get { return (IColorSelectorBackend) BackendHost.Backend; }
 		}
 
