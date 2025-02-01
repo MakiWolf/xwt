@@ -4,10 +4,13 @@
     <RootNamespace>Xwt.Gtk</RootNamespace>
     <AssemblyName>Xwt.Gtk</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+     <SignAssembly>True</SignAssembly>
+      <AssemblyOriginatorKeyFile>..\xwt.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType></DebugType>
